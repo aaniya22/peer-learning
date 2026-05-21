@@ -18,6 +18,7 @@ interface UserProfile {
   points: number | null;
   sessions_completed: number | null;
   created_at: string;
+  last_active_at: string | null;
 }
 
 const Admin = () => {
@@ -27,6 +28,7 @@ const Admin = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeTodayCount, setActiveTodayCount] = useState(0);
 
  useEffect(() => {
   if (!user) return;
@@ -39,10 +41,26 @@ const Admin = () => {
   const fetchUsers = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, name, email, skills, points, sessions_completed, created_at")
+      .select("id, name, email, skills, points, sessions_completed, created_at, last_active_at")
       .order("created_at", { ascending: false });
-    if (data) setUsers(data);
+    if (data) {
+      setUsers(data);
+      // Calculate active users (active in the last 24 hours)
+      const activeCount = calculateActiveTodayCount(data);
+      setActiveTodayCount(activeCount);
+    }
     setLoading(false);
+  };
+
+  const calculateActiveTodayCount = (userList: UserProfile[]): number => {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    return userList.filter(u => {
+      if (!u.last_active_at) return false;
+      const lastActive = new Date(u.last_active_at);
+      return lastActive >= oneDayAgo;
+    }).length;
   };
 
   const filteredUsers = users.filter(
@@ -85,7 +103,7 @@ const Admin = () => {
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
             { label: "Total Users", value: users.length, icon: Users },
-            { label: "Active Today", value: Math.floor(users.length * 0.3) || 1, icon: Calendar },
+            { label: "Active Today", value: activeTodayCount, icon: Calendar },
             { label: "Total Sessions", value: users.reduce((a, u) => a + (u.sessions_completed || 0), 0), icon: Calendar },
             { label: "Avg Points", value: Math.round(users.reduce((a, u) => a + (u.points || 0), 0) / (users.length || 1)), icon: Shield },
           ].map((stat) => (

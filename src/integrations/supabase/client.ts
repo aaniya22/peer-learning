@@ -14,8 +14,6 @@ const isMisconfigured =
 
 export const supabaseMisconfigured = isMisconfigured;
 
-console.log(SUPABASE_URL);
-console.log(SUPABASE_PUBLISHABLE_KEY);
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
