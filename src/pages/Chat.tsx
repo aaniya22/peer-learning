@@ -208,6 +208,25 @@ const Chat = () => {
 
     loadMessages();
 
+    const handleNewMessage = (payload: any) => {
+      const nextMessage = payload.new as ChatMessage;
+      const belongsToOpenChat =
+        (nextMessage.sender_id === currentUser.id &&
+          nextMessage.receiver_id === selectedUser.id) ||
+        (nextMessage.sender_id === selectedUser.id &&
+          nextMessage.receiver_id === currentUser.id);
+
+      if (!belongsToOpenChat) return;
+
+      setMessages((previous) => {
+        if (previous.some((message) => message.id === nextMessage.id)) {
+          return previous;
+        }
+
+        return [...previous, nextMessage];
+      });
+    };
+
     const messageChannel = supabase
       .channel(`chat-messages-${currentUser.id}-${selectedUser.id}`)
       .on(
@@ -216,25 +235,19 @@ const Chat = () => {
           event: "INSERT",
           schema: "public",
           table: "messages",
+          filter: `receiver_id=eq.${currentUser.id}`,
         },
-        (payload) => {
-          const nextMessage = payload.new as ChatMessage;
-          const belongsToOpenChat =
-            (nextMessage.sender_id === currentUser.id &&
-              nextMessage.receiver_id === selectedUser.id) ||
-            (nextMessage.sender_id === selectedUser.id &&
-              nextMessage.receiver_id === currentUser.id);
-
-          if (!belongsToOpenChat) return;
-
-          setMessages((previous) => {
-            if (previous.some((message) => message.id === nextMessage.id)) {
-              return previous;
-            }
-
-            return [...previous, nextMessage];
-          });
-        }
+        handleNewMessage
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `sender_id=eq.${currentUser.id}`,
+        },
+        handleNewMessage
       )
       .subscribe();
 
