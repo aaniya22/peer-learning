@@ -154,6 +154,18 @@ const faqs = [
     q: "How do mentors get verified?",
     a: "Mentors can verify through college email, LinkedIn, or GitHub.",
   },
+  {
+    q: "Can I join more than one community?",
+    a: "Yes, you can explore and participate in multiple communities based on your interests.",
+  },
+  {
+    q: "Do I need to be an expert to become a mentor?",
+    a: "No, mentors can also guide juniors by sharing project experience, study habits, and career advice.",
+  },
+  {
+    q: "Will my progress and streak be saved?",
+    a: "Yes, your streak and learning activity are tracked locally so you can stay motivated day by day.",
+  },
 ];
 
 export default function Landing() {
@@ -909,32 +921,94 @@ export default function Landing() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="container mx-auto max-w-4xl px-6 py-24">
-        <h2 className="mb-12 text-center text-5xl font-black">
-          Frequently Asked Questions
-        </h2>
+      <section id="faq" className="container relative mx-auto max-w-6xl px-6 py-24">
+        <div className="pointer-events-none absolute inset-x-6 top-12 -z-10 h-40 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-10 top-28 -z-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute left-16 bottom-24 -z-10 h-36 w-36 rounded-full bg-indigo-500/10 blur-3xl" />
 
-        {faqs.map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 30 }}
+        <div className="mx-auto max-w-5xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-5 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl"
+            transition={{ duration: 0.6 }}
+            className="mb-4 flex items-center justify-center gap-3 text-center text-4xl font-black tracking-tight text-white sm:text-5xl"
           >
-            <button
-              onClick={() => setOpen(open === i ? null : i)}
-              className="flex w-full items-center justify-between px-6 py-5 text-left"
-            >
-              <span className="text-lg font-semibold">{item.q}</span>
-              <ChevronDown />
-            </button>
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.12)] sm:h-12 sm:w-12">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+            </span>
+            Frequently Asked Questions
+          </motion.h2>
 
-            {open === i && (
-              <div className="px-6 pb-6 text-slate-300/70">{item.a}</div>
-            )}
-          </motion.div>
-        ))}
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, delay: 0.08 }}
+            className="mx-auto mb-14 max-w-2xl text-center text-sm leading-7 text-slate-300/80 sm:text-base"
+          >
+            Find quick answers about mentoring, sessions, communities, and how
+            to get started on PeerLearn.
+          </motion.p>
+
+          <div className="grid gap-5 md:grid-cols-2 md:items-start">
+            {faqs.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.08 }}
+                whileHover={{ y: -4 }}
+                className="group relative self-start overflow-hidden rounded-3xl border border-white/12 bg-white/7 shadow-[0_12px_40px_rgba(2,6,23,0.28)] backdrop-blur-3xl transition-all duration-300 hover:border-cyan-400/25 hover:shadow-[0_18px_70px_rgba(34,211,238,0.12)]"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-cyan-400/5 opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-cyan-300/20 via-transparent to-transparent" />
+
+                <button
+                  onClick={() => setOpen(open === i ? null : i)}
+                  className={`group flex w-full items-center justify-between px-6 py-5 text-left transition-all duration-300 sm:px-7 ${
+                    open === i
+                      ? "bg-cyan-400/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                      : "text-slate-100 hover:bg-white/6"
+                  }`}
+                >
+                  <span className="pr-4 text-base font-semibold leading-7 tracking-tight text-white sm:text-lg">
+                    {item.q}
+                  </span>
+                  <motion.span
+                    animate={{ rotate: open === i ? 180 : 0, scale: open === i ? 1.08 : 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                      open === i
+                        ? "border-cyan-400/40 bg-cyan-400/15 text-cyan-200 shadow-[0_0_24px_rgba(34,211,238,0.24)]"
+                        : "border-white/10 bg-white/5 text-slate-300 group-hover:border-cyan-400/25 group-hover:text-cyan-200"
+                    }`}
+                  >
+                    <ChevronDown className="h-5 w-5" />
+                  </motion.span>
+                </button>
+
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: open === i ? "auto" : 0,
+                    opacity: open === i ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.32, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-white/10 px-6 pb-6 pt-4 sm:px-7">
+                    <p className="max-w-3xl text-sm leading-7 text-slate-200/90 sm:text-base">
+                      {item.a}
+                    </p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
