@@ -74,21 +74,14 @@ const Leaderboard = () => {
 
     if (!existingUser) {
 
-      await supabase.from("leaderboard" as any).insert({
-        user_id: user.id,
-
-        username:
+      await (supabase as any).rpc("join_leaderboard", {
+        _username:
           user.user_metadata?.name ||
           user.email?.split("@")[0] ||
           "Anonymous",
 
-        avatar_url:
+        _avatar_url:
           user.user_metadata?.avatar_url || null,
-
-        xp: 0,
-        streak: 1,
-        sessions_joined: 0,
-        badges: ["Beginner"],
       });
     }
   };
