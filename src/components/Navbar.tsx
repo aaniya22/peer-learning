@@ -69,7 +69,6 @@ const Navbar = () => {
     fetchProfile();
   }, [user]);
 
-  if (location.pathname === "/") return null;
 
   // LOGOUT
   const handleLogout = async () => {

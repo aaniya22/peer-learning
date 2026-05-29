@@ -98,7 +98,7 @@ function AppContent() {
         <Routes>
           <Route
             path="/"
-            element={user ? <Navigate to="/dashboard" replace /> : <Index />}
+            element={user ? <Navigate to="/dashboard" replace /> : <WithNav><Index /></WithNav>}
           />
 
           <Route path="/login" element={<Login />} />
