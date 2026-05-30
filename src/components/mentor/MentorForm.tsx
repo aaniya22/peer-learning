@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
@@ -9,16 +9,6 @@ const steps = [
   "Experience",
   "Mentorship",
   "Success",
-];
-
-const allSkills = [
-  "DSA",
-  "React",
-  "AI/ML",
-  "Python",
-  "Cybersecurity",
-  "Java",
-  "Web Dev",
 ];
 
 const mentorshipOptions = [
@@ -34,6 +24,8 @@ export default function MentorForm() {
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState("");
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -44,6 +36,34 @@ export default function MentorForm() {
     skills: [] as string[],
     mentorship_types: [] as string[],
   });
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      const { data } = await (supabase as any).from("skills_taxonomy").select("name").order("name");
+      if (data) {
+        setAvailableSkills(data.map(d => d.name));
+      }
+    };
+    fetchSkills();
+  }, []);
+
+  const handleAddCustomSkill = async () => {
+    const skill = customSkill.trim();
+    if (!skill) return;
+    
+    await (supabase as any).from("skills_taxonomy").insert({ name: skill });
+    
+    if (!availableSkills.includes(skill)) {
+      setAvailableSkills([...availableSkills, skill]);
+    }
+    
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.includes(skill) ? prev.skills : [...prev.skills, skill],
+    }));
+    
+    setCustomSkill("");
+  };
 
   const toggleSkill = (skill: string) => {
     setFormData((prev) => ({
@@ -86,12 +106,13 @@ const validateMentorship = () => {
 };
   const handleSubmit = async () => {
     setLoading(true);
+    setError("");
 
     let isTimeout = false;
     const timeout = setTimeout(() => {
       isTimeout = true;
       setLoading(false);
-      alert("Submission timed out. Please check your network and try again.");
+      setError("Submission timed out. Please check your network and try again.");
     }, 10_000);
 
     try {
@@ -101,11 +122,20 @@ const validateMentorship = () => {
         if (!isTimeout) clearTimeout(timeout);
         setError("You must be logged in to submit an application.");
         setLoading(false);
+
         return;
       }
 
       const { error } = await supabase
         .from("mentors" as any)
+
+        clearTimeout(timeout);
+        return;
+      }
+
+      const { error: insertError } = await (supabase as any)
+        .from("mentors")
+
         .insert([
           {
             user_id: user.id,
@@ -125,6 +155,12 @@ const validateMentorship = () => {
       if (error) {
         console.error(error);
         setError(error.message || "Something went wrong!");
+
+      if (insertError) {
+        console.error(insertError);
+        setError("Something went wrong!");
+        setLoading(false);
+
         return;
       }
 
@@ -133,11 +169,8 @@ const validateMentorship = () => {
       if (isTimeout) return;
       clearTimeout(timeout);
       console.error(err);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      if (!isTimeout) {
-        setLoading(false);
-      }
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -231,8 +264,8 @@ const validateMentorship = () => {
               Skills & Expertise
             </h2>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              {allSkills.map((skill) => (
+            <div className="mt-8 flex flex-wrap gap-4 mb-6">
+              {availableSkills.map((skill) => (
                 <button
                   type="button"
                   key={skill}
@@ -246,6 +279,25 @@ const validateMentorship = () => {
                   {skill}
                 </button>
               ))}
+            </div>
+
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Add custom skill..."
+                value={customSkill}
+                onChange={(e) => setCustomSkill(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddCustomSkill()}
+                className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3 outline-none transition focus:border-cyan-400"
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomSkill}
+                className="flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 transition hover:bg-white/20"
+              >
+                <Plus size={20} />
+                Add
+              </button>
             </div>
           </div>
         )}
