@@ -26,8 +26,14 @@ export const errorHandler = (error, req, res, next) => {
 
   const message = error?.message || "Internal Server Error";
 
-  if (statusCode >= 500) {
-    console.error(error);
+  const requestId = req?.requestId || "unknown";
+  const userId = req?.user?.id || "anonymous";
+  const reason =
+    error?.details?.reason ||
+    (statusCode >= 500 ? "internal_error" : statusCode >= 400 ? "request_error" : "ok");
+
+  if (statusCode >= 500 || statusCode === 429) {
+    console.error(`[${requestId}] user=${userId} status=${statusCode} reason=${reason}`);
   }
 
   res.status(statusCode).json({

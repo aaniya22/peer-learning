@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth, requireProfileRole } from "../middlewares/requireAuth.js";
-import { protectedApiRateLimiter } from "../middlewares/rateLimiter.js";
+import { aiRouteRateLimiter } from "../middlewares/rateLimiter.js";
 import { validate } from "../middlewares/validate.js";
 import { chatSchemas } from "../validation/schemas.js";
 import { createChatCompletion } from "../controllers/chatController.js";
@@ -10,7 +10,7 @@ router.post(
   "/chat",
   requireAuth,
   requireProfileRole("mentor", "learner"),
-  protectedApiRateLimiter,
+  aiRouteRateLimiter,
   validate(chatSchemas.chatCompletion),
   createChatCompletion
 );

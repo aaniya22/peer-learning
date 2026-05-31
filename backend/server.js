@@ -13,15 +13,13 @@ if (mongoUri) {
       console.log("MongoDB connected");
     })
     .catch((error) => {
-      console.error("MongoDB connection failed:", error);
+      console.error("MongoDB connection failed");
     });
 } else {
   console.warn("MONGO_URI is not configured; auth routes will fail until it is set.");
 }
 
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY?.slice(0, 15) + "...");
-console.log("OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY?.slice(0, 10) + "...");
+console.log("Backend server initialized");
 
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);

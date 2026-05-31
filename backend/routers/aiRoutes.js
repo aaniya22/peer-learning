@@ -6,7 +6,7 @@ import {
 } from "../controllers/aiController.js";
 
 import { requireAuth, requireProfileRole } from "../middlewares/requireAuth.js";
-import { protectedApiRateLimiter } from "../middlewares/rateLimiter.js";
+import { aiRouteRateLimiter } from "../middlewares/rateLimiter.js";
 import { validate } from "../middlewares/validate.js";
 import { aiSchemas } from "../validation/schemas.js";
 
@@ -19,7 +19,7 @@ router.post(
   "/ask",
   requireAuth,
   requireProfileRole("mentor", "learner"),
-  protectedApiRateLimiter,
+  aiRouteRateLimiter,
   validate(aiSchemas.askAI),
   askAI
 );
@@ -31,7 +31,7 @@ router.post(
   "/generate-summary",
   requireAuth,
   requireProfileRole("mentor", "learner"),
-  protectedApiRateLimiter,
+  aiRouteRateLimiter,
   validate(aiSchemas.generateSessionSummary),
   generateSessionSummary
 );

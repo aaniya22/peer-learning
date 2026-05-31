@@ -1,41 +1,47 @@
-import { HttpError } from "../utils/httpError.js";
+import { budgetResponseTokens, callOpenRouterChatCompletion } from "../utils/openRouter.js";
+
+const ASK_AI_MODEL = "openai/gpt-4o-mini";
+const SUMMARY_MODEL = "openai/gpt-4o-mini";
+const ASK_AI_MAX_TOKENS = 256;
+const SUMMARY_MAX_TOKENS = 320;
+
+const parseSummaryContent = (content) => {
+  try {
+    return JSON.parse(content);
+  } catch {
+    return {
+      summary: content,
+      key_takeaways: [],
+    };
+  }
+};
 
 export const askAI = async (req, res, next) => {
   try {
     const { question } = req.body;
-
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    const answer = await callOpenRouterChatCompletion({
+      operation: "ask_ai",
+      model: ASK_AI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI peer mentor for students. Answer questions about coding, AI, DSA, and roadmaps in a supportive, clear, and approachable way.",
         },
-        body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an AI peer mentor for students. Answer questions about coding, AI, DSA, and roadmaps in a supportive, clear, and approachable way.",
-            },
-            {
-              role: "user",
-              content: question,
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await response.json();
+        {
+          role: "user",
+          content: question,
+        },
+      ],
+      maxTokens: budgetResponseTokens(question.length, ASK_AI_MAX_TOKENS),
+      temperature: 0.3,
+    });
 
     res.json({
-      answer: data.choices[0].message.content,
+      answer,
     });
   } catch (error) {
-    next(error instanceof HttpError ? error : new HttpError(500, "AI request failed"));
+    next(error);
   }
 };
 
@@ -55,49 +61,28 @@ export const generateSessionSummary = async (req, res, next) => {
       conversationText = conversationText.slice(-20000);
     }
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    const content = await callOpenRouterChatCompletion({
+      operation: "generate_session_summary",
+      model: SUMMARY_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI learning assistant. Generate a concise learning session summary and key takeaways from the conversation. Respond ONLY in valid JSON format like: {\"summary\":\"...\",\"key_takeaways\":[\"...\",\"...\"]}",
         },
-        body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an AI learning assistant. Generate a concise learning session summary and key takeaways from the conversation. Respond ONLY in valid JSON format like: {\"summary\":\"...\",\"key_takeaways\":[\"...\",\"...\"]}",
-            },
-            {
-              role: "user",
-              content: conversationText,
-            },
-          ],
-        }),
-      }
-    );
+        {
+          role: "user",
+          content: conversationText,
+        },
+      ],
+      maxTokens: budgetResponseTokens(conversationText.length, SUMMARY_MAX_TOKENS),
+      temperature: 0.2,
+    });
 
-    const data = await response.json();
-
-    const content =
-      data?.choices?.[0]?.message?.content;
-
-    let parsed;
-
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      parsed = {
-        summary: content,
-        key_takeaways: [],
-      };
-    }
+    const parsed = parseSummaryContent(content);
 
     res.json(parsed);
   } catch (error) {
-    next(error instanceof HttpError ? error : new HttpError(500, "Summary generation failed"));
+    next(error);
   }
 };
