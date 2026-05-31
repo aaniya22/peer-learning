@@ -41,9 +41,17 @@ app.use("/api", chatRoutes);
 // Global Error Handler (must be the last middleware)
 app.use(errorHandler);
 
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY?.slice(0, 15) + "...");
-console.log("OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY?.slice(0, 10) + "...");
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  console.log("✅ Supabase configured successfully");
+} else {
+  console.warn("⚠️  Supabase environment variables missing");
+}
+
+if (process.env.OPENROUTER_API_KEY) {
+  console.log("✅ OpenRouter AI configured successfully");
+} else {
+  console.warn("⚠️  OpenRouter API key missing");
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
