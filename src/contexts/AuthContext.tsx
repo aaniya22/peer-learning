@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,12 +20,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const isCreatingProfile = useRef(false);
 
   /**
    * Ensures user profile exists in database without overwriting existing data
    */
   const ensureProfileExists = useCallback(async (user: User) => {
+    if (isCreatingProfile.current) return;
     try {
+      isCreatingProfile.current = true;
       const profileData = {
         id: user.id,
         is_mentor: false,
@@ -53,6 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err) {
       console.error("Unexpected error while creating profile:", err);
+    } finally {
+      setTimeout(() => {
+        isCreatingProfile.current = false;
+      }, 1000);
     }
   }, []);
 
@@ -75,17 +82,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await ensureProfileExists(session.user);
-
+          // PERF: Read first to avoid firing a database write on every single page load
           const { data: profile } = await supabase
             .from("profiles")
             .select("is_mentor, is_learner")
             .eq("id", session.user.id)
-            .single();
+            .maybeSingle();
 
-          setNeedsOnboarding(
-            profile?.is_mentor === false && profile?.is_learner === false
-          );
+          if (!profile) {
+            await ensureProfileExists(session.user);
+            setNeedsOnboarding(true);
+          } else {
+            setNeedsOnboarding(
+              profile.is_mentor === false && profile.is_learner === false
+            );
+          }
         } else {
           setNeedsOnboarding(false);
         }
@@ -109,20 +120,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(session?.user ?? null);
 
           if (session?.user) {
-            if (_event === "SIGNED_IN") {
-              await ensureProfileExists(session.user);
-            }
-
             try {
+              // PERF: Check if profile exists first, even on SIGNED_IN events
               const { data: profile } = await supabase
                 .from("profiles")
                 .select("is_mentor, is_learner")
                 .eq("id", session.user.id)
-                .single();
+                .maybeSingle();
 
-              if (mounted) {
+              if (!profile) {
+                await ensureProfileExists(session.user);
+                if (mounted) setNeedsOnboarding(true);
+              } else if (mounted) {
                 setNeedsOnboarding(
-                  profile?.is_mentor === false && profile?.is_learner === false
+                  profile.is_mentor === false && profile.is_learner === false
                 );
               }
             } catch (err) {

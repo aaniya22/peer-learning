@@ -21,6 +21,7 @@ import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
 import { generateICS } from "@/utils/calendar";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/config/api";
 
 const tabs = [
   "Upcoming",
@@ -71,8 +72,20 @@ const [summaryLoading, setSummaryLoading] =
 
   const messagesEndRef = useRef<any>(null);
   
-  // Track sessions that have already granted XP to prevent infinite farming
-  const awardedSessions = useRef<Set<string>>(new Set());
+  // Track sessions that have already granted XP to prevent infinite farming across reloads
+  const getAwardedSessions = () => {
+    try {
+      return new Set<string>(JSON.parse(localStorage.getItem('awardedSessions') || '[]'));
+    } catch {
+      return new Set<string>();
+    }
+  };
+
+  const markSessionAwarded = (id: string) => {
+    const awarded = getAwardedSessions();
+    awarded.add(id);
+    localStorage.setItem('awardedSessions', JSON.stringify([...awarded]));
+  };
 
   // FETCH SESSIONS
   useEffect(() => {
@@ -420,25 +433,22 @@ const [summaryLoading, setSummaryLoading] =
     try {
       setSummaryLoading(true);
 
-      const prompt = `Generate a brief summary and key takeaways for this study session chat history. Return ONLY a valid JSON object with keys 'summary' (string) and 'key_takeaways' (array of strings). Do not include markdown formatting. Chat history: ${JSON.stringify(messages.map((m: any) => m.username + ": " + m.message))}`;
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const { data, error } = await supabase.functions.invoke("ai-chat", {
-        body: { prompt }
+      const res = await fetch(`${API_BASE_URL}/api/ai/generate-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ messages })
       });
 
-      if (error) throw error;
-      
-      let parsedData;
-      try {
-        const rawContent = data?.choices?.[0]?.message?.content || "{}";
-        parsedData = JSON.parse(rawContent.replace(/```json/g, "").replace(/```/g, "").trim());
-      } catch (err) {
-        console.error("Failed to parse summary", err);
-        parsedData = {
-          summary: "Session summary generated, but failed to parse response.",
-          key_takeaways: []
-        };
+      if (!res.ok) {
+        throw new Error("Failed to generate summary");
       }
+
+      const parsedData = await res.json();
 
       setSessionSummary(parsedData);
 
@@ -666,10 +676,11 @@ const [summaryLoading, setSummaryLoading] =
                 <button 
                   onClick={() => {
                     setIsVideoActive(true);
-                    // Prevent infinite XP farming loophole
-                    if (!awardedSessions.current.has(selectedSession.id)) {
+                    // Prevent infinite XP farming loophole across page reloads
+                    const awarded = getAwardedSessions();
+                    if (!awarded.has(selectedSession.id)) {
                       awardXP({ activity: 'session_join' });
-                      awardedSessions.current.add(selectedSession.id);
+                      markSessionAwarded(selectedSession.id);
                     }
                   }}
                   className="flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-black px-4 py-2 rounded-2xl font-bold hover:opacity-90 transition"

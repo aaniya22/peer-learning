@@ -2,6 +2,7 @@ import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } f
 import { ArrowLeft, Inbox, MessageCircle, Phone, Search, Send, Users, Video } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
+import { useAwardXP } from "@/hooks/useAwardXP";
 
 type ProfileSummary = {
   id: string;
@@ -227,6 +228,8 @@ const Messages = ({ user }: MessagesProps) => {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
+  
+  const awardXP = useAwardXP();
 
   const currentUserId = user?.id;
 
@@ -608,8 +611,9 @@ const Messages = ({ user }: MessagesProps) => {
           ? previous
           : [...previous, data as MessageRow]
       );
+      awardXP.mutate({ activity: "chat_message" });
     }
-  }, [currentUserId, newMessage, selectedUser]);
+  }, [currentUserId, newMessage, selectedUser, awardXP]);
 
   const selectProfile = useCallback((profile: ProfileSummary) => {
     setSelectedUser(profile);
