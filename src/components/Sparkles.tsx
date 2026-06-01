@@ -5,7 +5,7 @@ const Sparkles: React.FC = () => {
 
   useEffect(() => {
     let ticking = false;
-    let timeouts: NodeJS.Timeout[] = [];
+    let timeouts = new Set<NodeJS.Timeout>();
     const container = containerRef.current;
 
     if (!container) return;
@@ -29,9 +29,11 @@ const Sparkles: React.FC = () => {
           if (container.contains(sparkle)) {
             container.removeChild(sparkle);
           }
+          // MEMORY LEAK FIX: Remove timer from Set once executed
+          timeouts.delete(timeout);
         }, 800);
         
-        timeouts.push(timeout);
+        timeouts.add(timeout);
       }
     };
 
@@ -50,6 +52,7 @@ const Sparkles: React.FC = () => {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       timeouts.forEach(clearTimeout);
+      timeouts.clear();
       if (container) {
         container.innerHTML = "";
       }
