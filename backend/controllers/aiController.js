@@ -106,94 +106,99 @@ const callOpenRouter = async ({ messages, maxTokens, temperature = 0.7, response
   return response.json();
 };
 
-export const askAI = async (req, res) => {
-  const { question } = req.body;
+export const askAI = async (req, res, next) => {
+  try {
+    const { question } = req.body;
 
-  if (!question || typeof question !== "string") {
-    return res.status(400).json({ error: "Invalid question provided" });
+    if (!question || typeof question !== "string") {
+      return res.status(400).json({ error: "Invalid question provided" });
+    }
+
+    if (question.length > 2000) {
+      return res.status(400).json({ error: "Question exceeds maximum length of 2000 characters" });
+    }
+
+    const maxTokens = budgetResponseTokens(question, ASK_AI_MAX_TOKENS);
+
+    const data = await callOpenRouter({
+      maxTokens,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI peer mentor for students. Answer questions about coding, AI, DSA, and roadmaps in a supportive, clear, and approachable way.",
+        },
+        {
+          role: "user",
+          content: question,
+        },
+      ],
+    });
+
+    const content = extractMessageContent(data);
+    if (!content) {
+      throw new HttpError(502, "AI service returned an empty response.");
+    }
+
+    res.json({
+      answer: content,
+    });
+  } catch (error) {
+    next(error);
   }
-
-  if (question.length > 2000) {
-    return res.status(400).json({ error: "Question exceeds maximum length of 2000 characters" });
-  }
-
-  const maxTokens = budgetResponseTokens(question, ASK_AI_MAX_TOKENS);
-
-  const data = await callOpenRouter({
-    maxTokens,
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an AI peer mentor for students. Answer questions about coding, AI, DSA, and roadmaps in a supportive, clear, and approachable way.",
-      },
-      {
-        role: "user",
-        content: question,
-      },
-    ],
-  });
-
-  const content = extractMessageContent(data);
-  if (!content) {
-    throw new HttpError(502, "AI service returned an empty response.");
-  }
-
-  res.json({
-    answer: content,
-  });
 };
 
-export const generateSessionSummary = async (req, res) => {
-  const { messages } = req.body;
-
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({
-      error: "Messages are required and must be an array",
-    });
-  }
-
-  const recentMessages = messages.slice(-100);
-
-  let conversationText = recentMessages
-    .map((msg) => `${msg.username || "User"}: ${msg.message}`)
-    .join("\n");
-
-  if (conversationText.length > 20000) {
-    conversationText = conversationText.slice(-20000);
-  }
-
-  const maxTokens = budgetResponseTokens(conversationText, SUMMARY_MAX_TOKENS);
-
-  const data = await callOpenRouter({
-    maxTokens,
-    temperature: 0.2,
-    responseFormat: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an AI learning assistant. Return only strict JSON with exactly two keys: summary (string) and key_takeaways (array of strings). Do not include markdown fences or extra text.",
-      },
-      {
-        role: "user",
-        content: conversationText,
-      },
-    ],
-  });
-
-  const content = extractMessageContent(data);
-  if (!content) {
-    throw new HttpError(502, "Summary generation returned an empty response.");
-  }
-
+export const generateSessionSummary = async (req, res, next) => {
   try {
+    const { messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({
+        error: "Messages are required and must be an array",
+      });
+    }
+
+    const recentMessages = messages.slice(-100);
+
+    let conversationText = recentMessages
+      .map((msg) => `${msg.username || "User"}: ${msg.message}`)
+      .join("\n");
+
+    if (conversationText.length > 20000) {
+      conversationText = conversationText.slice(-20000);
+    }
+
+    const maxTokens = budgetResponseTokens(conversationText, SUMMARY_MAX_TOKENS);
+
+    const data = await callOpenRouter({
+      maxTokens,
+      temperature: 0.2,
+      responseFormat: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI learning assistant. Return only strict JSON with exactly two keys: summary (string) and key_takeaways (array of strings). Do not include markdown fences or extra text.",
+        },
+        {
+          role: "user",
+          content: conversationText,
+        },
+      ],
+    });
+
+    const content = extractMessageContent(data);
+    if (!content) {
+      throw new HttpError(502, "Summary generation returned an empty response.");
+    }
+
     res.json(parseStrictSummaryContent(content));
-  } catch {
-    throw new HttpError(
-      502,
-      "Summary generation returned an invalid response format."
-    );
+  } catch (error) {
+    if (error.message === "Model did not return a valid summary JSON payload.") {
+      next(new HttpError(502, "Summary generation returned an invalid response format."));
+    } else {
+      next(error);
+    }
   }
 };
