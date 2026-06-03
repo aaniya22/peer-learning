@@ -153,9 +153,9 @@ export const getSupabaseDiscover = async (req, res) => {
     const filter = req.query.filter || "All";
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
 
-    const supabase = getSupabase();
+    const supabaseAdmin = getSupabaseAdmin();
 
-    const { data: currentUser, error: meError } = await supabase
+    const { data: currentUser, error: meError } = await supabaseAdmin
       .from("profiles")
       .select("*")
       .eq("id", userId)
@@ -165,7 +165,7 @@ export const getSupabaseDiscover = async (req, res) => {
       return res.status(404).json({ success: false, message: "User profile not found" });
     }
 
-    let query = supabase.from("profiles").select("*").neq("id", userId).limit(100);
+    let query = supabaseAdmin.from("profiles").select("*").neq("id", userId).limit(100);
 
     if (search.trim()) {
       const safeSearch = search.trim().replace(/"/g, '""');
