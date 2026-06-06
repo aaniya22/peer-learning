@@ -199,6 +199,7 @@ export function useSessions(user: any) {
         toast({ title: "Success! 🎉", description: "You have joined the session." });
 
         if (!existingParticipant) {
+          awardedSessionsRef.current.add(sessionId);
           awardXP({ activity: "session_join" });
         }
       }
