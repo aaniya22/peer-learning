@@ -63,6 +63,7 @@ const Dashboard = () => {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recommendedPeers, setRecommendedPeers] = useState<any[]>([]);
+  const [connectedPeerIds, setConnectedPeerIds] = useState<Set<string>>(new Set());
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
@@ -136,6 +137,34 @@ const Dashboard = () => {
       }
     } catch (err) {
       console.error("Failed to fetch recommended peers:", err);
+    }
+  };
+
+  const handleConnect = async (peerId: string) => {
+    if (!user || connectedPeerIds.has(peerId)) return;
+    // Optimistic update prevents duplicate inserts from double-clicks
+    setConnectedPeerIds((prev) => new Set([...prev, peerId]));
+    const { error } = await (supabase as any).from("peer_connections").insert({
+      sender_id: user.id,
+      receiver_id: peerId,
+      status: "pending",
+    });
+    if (error) {
+      // Roll back optimistic update on failure
+      setConnectedPeerIds((prev) => {
+        const next = new Set(prev);
+        next.delete(peerId);
+        return next;
+      });
+      return;
+    }
+    const { error: notifError } = await (supabase as any).from("notifications").insert({
+      user_id: peerId,
+      type: "connection_request",
+      body: `${profile?.name || "Someone"} wants to connect with you!`,
+    });
+    if (notifError) {
+      console.error("Failed to send connection notification:", notifError);
     }
   };
 
@@ -290,6 +319,7 @@ const Dashboard = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/sessions")}
               className="rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-7 py-4 font-semibold text-black shadow-[0_0_35px_rgba(34,211,238,0.35)]"
             >
               + Start Learning
@@ -433,8 +463,12 @@ const Dashboard = () => {
                         ))}
                       </div>
 
-                      <button className="mt-5 w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 font-semibold text-slate-900 transition hover:scale-[1.02]">
-                        Connect with Peer
+                      <button
+                        onClick={() => handleConnect(p.id)}
+                        disabled={connectedPeerIds.has(p.id)}
+                        className="mt-5 w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 font-semibold text-slate-900 transition hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {connectedPeerIds.has(p.id) ? "Pending" : "Connect with Peer"}
                       </button>
                     </div>
                 ))}
