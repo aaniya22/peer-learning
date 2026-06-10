@@ -21,7 +21,7 @@ const openrouter = new OpenAI({
 const MAX_TOKENS_CAP = 512;
 
 const SYSTEM_PROMPT =
-  "You are a helpful peer-learning assistant. Answer questions about coding, study techniques, and academic topics in a clear and supportive way.";
+  "You are a helpful peer-learning assistant, answering questions about coding, study techniques, and academic topics in a clear and supportive way.";
 
 router.post("/chat", requireAuth, rateLimiter, validate(chatSchemas.chatCompletion), asyncHandler(async (req, res) => {
   const { model = "openai/gpt-3.5-turbo", max_tokens, temperature = 0.7 } = req.body;
