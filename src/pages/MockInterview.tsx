@@ -5,7 +5,6 @@ import { API_BASE_URL } from "@/config/api";
 import { toast } from "sonner";
 import { Loader2, Send, Bot, User, CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { supabase } from "@/config/supabaseClient";
 
 type Message = {
   role: "system" | "user" | "assistant";
