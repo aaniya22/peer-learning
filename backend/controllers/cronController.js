@@ -12,6 +12,37 @@ const getSupabaseClient = () => {
   return createClient(supabaseUrl, serviceRoleKey);
 };
 
+/*
+ * dispatchPushNotifications
+ *
+ * Bulk-delivers pending push notifications to subscribed browsers.
+ *
+ * Batch cap: fetches at most 100 rows per invocation (oldest-first). A
+ * notification backlog drains at 100 rows/minute assuming a 1-minute cron
+ * schedule. If queue depth grows faster than this, trigger additional manual
+ * runs (after the 60-second cooldown) or mark stale rows sent via SQL — see
+ * docs/smart-notifications.md → "Manual drain procedure".
+ *
+ * Failure absorption: Promise.allSettled is used intentionally so that a
+ * single failing push (network error, expired subscription) does not block
+ * delivery to other recipients. The `sent` vs `processed` delta in the
+ * response reflects failures. Each notification row is stamped with
+ * `push_sent_at` regardless of delivery outcome — there is no automatic retry
+ * for failed pushes.
+ *
+ * Subscription expiry (HTTP 410 / 404): the web-push library returns a
+ * rejection with `statusCode 410` (subscription expired) or `404` (endpoint
+ * not found) when a browser unsubscribes or revokes permission. These
+ * subscriptions should be deleted from `push_subscriptions` to avoid
+ * accumulating dead endpoints. NOTE: this cleanup is currently implemented in
+ * sendPushNotification (notificationController.js) but NOT here. A future
+ * improvement should add equivalent cleanup to this handler.
+ *
+ * @route   POST /api/cron/dispatch-notifications
+ * @access  CRON_SECRET (Authorization: Bearer)
+ * @returns {{ sent: number, processed: number }}
+ */
+
 export const dispatchPushNotifications = async (req, res, next) => {
   try {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
