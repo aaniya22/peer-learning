@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import {
   Users,
   Activity,
+  UsersRound,
+  TrendingUp,
+  Zap,
   BrainCircuit,
   Code2,
   Globe,
   Rocket,
   Briefcase,
-  TrendingUp,
-  Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,15 +21,15 @@ const communities = [
     icon: BrainCircuit,
     members: "4.8K members",
     activity: "230 active this week",
-    online: "1.2K online",
-    growth: "+12% weekly growth",
-    engagement: "86% activity",
+    online: "142 online",
+    growth: "+12% this week",
+    activityPercent: "78% active",
     primaryTag: "Beginner Friendly",
     secondaryTag: "Project Based",
-    accentFrom: "from-cyan-400/20",
-    accentTo: "to-blue-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]",
-    featured: true,
+    accentFrom: "from-cyan-400/25",
+    accentTo: "to-blue-500/20",
+    glow: "hover:shadow-[0_0_55px_rgba(34,211,238,0.35)]",
+    isFeatured: false,
   },
   {
     name: "DSA Warriors",
@@ -36,14 +37,15 @@ const communities = [
     icon: Code2,
     members: "6.1K members",
     activity: "420 active this week",
-    online: "2.0K online",
-    growth: "+18% weekly growth",
-    engagement: "91% activity",
+    online: "289 online",
+    growth: "+24% this week",
+    activityPercent: "92% active",
     primaryTag: "Interview Focus",
     secondaryTag: "Daily Challenges",
-    accentFrom: "from-emerald-400/20",
-    accentTo: "to-lime-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(52,211,153,0.32)]",
+    accentFrom: "from-emerald-400/25",
+    accentTo: "to-lime-500/20",
+    glow: "hover:shadow-[0_0_55px_rgba(52,211,153,0.32)]",
+    isFeatured: true,
   },
   {
     name: "Web Dev Hub",
@@ -51,14 +53,15 @@ const communities = [
     icon: Globe,
     members: "5.4K members",
     activity: "300 active this week",
-    online: "1.5K online",
-    growth: "+10% weekly growth",
-    engagement: "82% activity",
+    online: "167 online",
+    growth: "+18% this week",
+    activityPercent: "85% active",
     primaryTag: "Build In Public",
     secondaryTag: "Portfolio Ready",
-    accentFrom: "from-sky-400/20",
-    accentTo: "to-indigo-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(56,189,248,0.3)]",
+    accentFrom: "from-sky-400/25",
+    accentTo: "to-indigo-500/20",
+    glow: "hover:shadow-[0_0_55px_rgba(56,189,248,0.3)]",
+    isFeatured: false,
   },
   {
     name: "Hackathon Teams",
@@ -66,14 +69,15 @@ const communities = [
     icon: Rocket,
     members: "3.2K members",
     activity: "150 active this week",
-    online: "800 online",
-    growth: "+9% weekly growth",
-    engagement: "78% activity",
+    online: "89 online",
+    growth: "+9% this week",
+    activityPercent: "71% active",
     primaryTag: "Team Match",
     secondaryTag: "Fast Paced",
-    accentFrom: "from-amber-400/20",
-    accentTo: "to-orange-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(251,146,60,0.32)]",
+    accentFrom: "from-amber-400/25",
+    accentTo: "to-orange-500/20",
+    glow: "hover:shadow-[0_0_55px_rgba(251,146,60,0.32)]",
+    isFeatured: false,
   },
   {
     name: "Interview Prep",
@@ -81,135 +85,121 @@ const communities = [
     icon: Briefcase,
     members: "4.1K members",
     activity: "260 active this week",
-    online: "1.1K online",
-    growth: "+14% weekly growth",
-    engagement: "88% activity",
+    online: "134 online",
+    growth: "+15% this week",
+    activityPercent: "81% active",
     primaryTag: "Career Boost",
     secondaryTag: "Mock Interviews",
-    accentFrom: "from-fuchsia-400/20",
-    accentTo: "to-pink-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(232,121,249,0.32)]",
-  },
-  // ✅ Added 6th card for layout balance
-  {
-    name: "Startup Builders",
-    subtitle: "Turn ideas into MVPs with founders, designers, and engineers.",
-    icon: TrendingUp,
-    members: "2.9K members",
-    activity: "190 active this week",
-    online: "900 online",
-    growth: "+21% weekly growth",
-    engagement: "84% activity",
-    primaryTag: "Entrepreneurship",
-    secondaryTag: "MVP Building",
-    accentFrom: "from-purple-400/20",
-    accentTo: "to-indigo-500/10",
-    glow: "hover:shadow-[0_0_60px_rgba(168,85,247,0.3)]",
+    accentFrom: "from-fuchsia-400/25",
+    accentTo: "to-pink-500/20",
+    glow: "hover:shadow-[0_0_55px_rgba(232,121,249,0.32)]",
+    isFeatured: false,
   },
 ];
 
 export function Communities() {
   return (
     <section id="community" className="container px-6 py-24">
-      <h2 className="mb-4 text-center text-5xl font-black">
+      <h2 className="mb-4 text-center text-5xl font-black tracking-tight text-white">
         Explore Communities
       </h2>
-
       <p className="mx-auto mb-16 max-w-3xl text-center text-base text-slate-300/75 md:text-lg">
         Discover focused peer circles, track live activity, and join communities
         designed around your goals.
       </p>
 
-      <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3 place-items-center xl:place-items-stretch">
         {communities.map((community, i) => {
           const Icon = community.icon;
+          const isFeatured = community.isFeatured;
 
           return (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.07 }}
+              transition={{ delay: i * 0.08 }}
               viewport={{ once: true }}
-              whileHover={{
-                y: -12,
-                scale: 1.03,
-              }}
-              className={`group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-7 backdrop-blur-2xl transition-all duration-300 hover:border-white/30 ${community.glow}`}
+              whileHover={{ y: -12, scale: 1.02 }}
+              className={`group relative overflow-hidden rounded-[28px] border bg-white/10 p-7 backdrop-blur-2xl transition-all duration-300 ${
+                isFeatured
+                  ? "border-cyan-400/60 shadow-xl shadow-cyan-500/10 xl:col-span-1"
+                  : "border-white/15 hover:border-white/35"
+              } ${community.glow}`}
             >
-              {/* softer background depth */}
+              {/* Subtle background gradient */}
               <div
                 className={`pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br ${community.accentFrom} ${community.accentTo} opacity-70`}
               />
 
-              {/* Featured Badge */}
-              {community.featured && (
-                <div className="absolute right-5 top-5 rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-semibold text-cyan-200 border border-cyan-300/30">
-                  ⭐ Most Popular
+              {isFeatured && (
+                <div className="absolute -right-1 -top-1 z-20 rounded-bl-2xl rounded-tr-[28px] bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-1 text-xs font-bold text-white shadow-md">
+                  MOST POPULAR
                 </div>
               )}
 
-              {/* Header */}
               <div className="mb-5 flex items-start justify-between gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-cyan-200 shadow-[0_0_25px_rgba(255,255,255,0.06)]">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/15 text-cyan-200 shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-transform group-hover:scale-110">
                   <Icon className="h-7 w-7" />
                 </div>
 
                 <div className="flex flex-wrap justify-end gap-2">
-                  <span className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-slate-100">
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
+                    <Zap className="h-3 w-3" />
                     {community.primaryTag}
                   </span>
-                  <span className="rounded-full border border-white/20 bg-black/20 px-3 py-1 text-xs font-medium text-slate-200/90">
+                  <span className="rounded-full border border-white/25 bg-black/30 px-3 py-1 text-xs font-medium text-slate-200/90">
                     {community.secondaryTag}
                   </span>
                 </div>
               </div>
 
-              {/* Title */}
-              <h3 className="text-xl font-bold text-white">{community.name}</h3>
+              <h3
+                className={`text-xl font-bold text-white ${isFeatured ? "text-2xl" : ""}`}
+              >
+                {community.name}
+              </h3>
 
-              <p className="mt-3 min-h-[52px] text-sm leading-6 text-slate-200/80">
+              <p className="mt-3 min-h-[52px] text-sm leading-6 text-slate-200/90">
                 {community.subtitle}
               </p>
 
-              {/* Metrics */}
-              <div className="mt-5 space-y-2 text-sm text-slate-100/90">
-                <div className="flex items-center gap-2">
+              <div className="mt-6 space-y-2.5 text-sm">
+                <div className="flex items-center gap-2 text-slate-100/90">
                   <Users className="h-4 w-4 text-cyan-200" />
                   {community.members}
                 </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-slate-100/90">
                   <Activity className="h-4 w-4 text-cyan-200" />
                   {community.activity}
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Wifi className="h-4 w-4 text-cyan-200" />
+                <div className="flex items-center gap-2 text-slate-100/90">
+                  <UsersRound className="h-4 w-4 text-emerald-400" />
                   {community.online}
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-300" />
-                  {community.growth} • {community.engagement}
+                <div className="flex items-center gap-2 text-slate-100/90">
+                  <TrendingUp className="h-4 w-4 text-amber-400" />
+                  {community.growth}
+                </div>
+                <div className="flex items-center gap-2 text-slate-100/90">
+                  <Zap className="h-4 w-4 text-violet-400" />
+                  {community.activityPercent}
                 </div>
               </div>
 
-              {/* CTA */}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  className="rounded-xl bg-cyan-400 text-slate-900 hover:bg-cyan-300 shadow-md"
-                >
-                  <Link to="/signup">Join Community</Link>
-                </Button>
-
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button
                   asChild
                   variant="outline"
-                  className="rounded-xl border-white/25 bg-white/5 text-slate-100 hover:bg-white/15"
+                  className="rounded-xl border-white/40 bg-white/5 text-slate-100 hover:bg-white/15 hover:border-white/60 flex-1"
                 >
                   <Link to="/discover">Explore</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="rounded-xl bg-white text-slate-900 hover:bg-cyan-100 flex-1 font-semibold"
+                >
+                  <Link to="/signup">Join Community</Link>
                 </Button>
               </div>
             </motion.div>
